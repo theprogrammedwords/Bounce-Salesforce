@@ -1,0 +1,869 @@
+
+Parent Component for TabView
+------------------------------------------------------------------------------------------------------------------------------------------
+<aura:component implements="forceCommunity:searchInterface,force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction"
+                controller="fetchbookingdata"
+                access="global">
+    
+    <aura:attribute 
+                    name="Booking" 
+                    type="Booking__c[]" />
+    <aura:attribute 
+                    name="realbooking" 
+                    type="Booking__c[]" />
+    
+    <aura:attribute 
+                    name="searchText" 
+                    type="String" 
+                    default=""/>
+    
+    <aura:attribute name="options" type="List" 
+                    default="[
+                             {'label': 'isActive', 'value': 'option1'},
+                             {'label': 'isBooked', 'value': 'option2'},
+                             {'label': 'Due to service', 'value': 'option3'}
+                             ]"/>
+    
+    <aura:attribute 
+                    name="Bike" 
+                    type="Bike__c[]" />
+    
+    <aura:attribute 
+                    name="searchBike" 
+                    type="String" 
+                    default=""/>
+    <aura:handler name="init" value="{!this}" action="{!c.loadbookinglist}"/>
+    
+    <aura:attribute name="PageNumber" type="integer" default="1"/>
+    <aura:attribute name="TotalPages" type="integer" default="0"/>
+    <aura:attribute name="TotalRecords" type="integer" default="0"/>
+    <aura:attribute name="RecordStart" type="integer" default="0"/>
+    <aura:attribute name="RecordEnd" type="integer" default="0"/>
+    
+    
+    <aura:attribute name="values" type="List" default="['','','']"/>
+    
+    
+    <aura:attribute 
+                    name="arrowDirection" 
+                    type="string" 
+                    default="arrowup" 
+                    />
+    
+    <aura:attribute 
+                    name="isAsc" 
+                    type="boolean" 
+                    default="true" 
+                    /> 
+    
+    <aura:attribute name="selectedTabsoft" 
+                    type="string" 
+                    default="firstName" 
+                    />
+    
+    <aura:attribute name="selectedTabsoftbike" 
+                    type="string" 
+                    default="bikenumber" 
+                    />
+    
+    
+    <aura:handler 
+                  name="init" 
+                  value="{!this}" 
+                  action="{!c.doInit}" />
+    
+    
+    
+    <lightning:tabset variant="vertical" selectedTabId="booking">
+        
+        
+        <lightning:tab label="Booking" id="booking">
+            <div class="slds-m-around_xx-large">
+                <h1 class="slds-text-heading--medium">Booking</h1>
+                <br/>
+                <div class="slds-float_right">
+                    <ui:inputSelect aura:id="pageSize" label="Display Records Per Page: " change="{!c.onSelectChange}">
+                        <ui:inputSelectOption text="10" label="10" value="true"/>
+                        <ui:inputSelectOption text="15" label="15"/>
+                        <ui:inputSelectOption text="20" label="20"/>
+                    </ui:inputSelect>
+                    <br/>
+                </div>
+                
+            </div>
+            
+            <div class="slds-form-element slds-lookup" 
+                 data-select="single">
+                
+                <div class="slds-form-element__control">
+                    <div class="slds-input-has-icon slds-input-has-icon--right">
+                        <lightning:buttonIcon 
+                                              iconName="utility:search" 
+                                              variant="bare" 
+                                              onclick="{!c.doActionForBook }" 
+                                              alternativeText="Search" 
+                                              class="slds-input__icon" />
+                        
+                        <ui:inputText aura:id="inputCmp" 
+                                      value="{!v.searchText}" 
+                                      class="slds-lookup__search-input slds-input" 
+                                      required="true" 
+                                      placeholder="Search" />
+                    </div>
+                </div>
+            </div>
+            <br/>
+            <br/>
+            <br/>
+            
+            
+            <lightning:checkboxGroup name="checkboxgroup"
+                                     label="Filters"
+                                     options="{! v.options }"
+                                     value="{! v.values }"
+                                     onchange="{! c.handleChange }"/>
+            
+            
+            <br/>
+            <br/>
+            
+            <table style="width:100%" class="slds-table slds-table--bordered slds-table--cell-buffer">
+                <thead>
+                    <tr class="slds-text-title--caps" width="300px">
+                        
+                        <th class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortBookingNumber}"
+                            width="150px">
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">Booking Name</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'firstName') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'firstName') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        
+                        <th width="150px"
+                            class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortCustomer}">
+                            
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">Customer Name</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'custName') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'custName') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        
+                        <th width="150px"
+                            class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortBikeName}">
+                            
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">Bike Name</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'bikeName') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'bikeName') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th><th width="150px"
+                                 class="slds-is-sortable slds-text-title--caps" 
+                                 scope="col" 
+                                 onclick="{!c.sortstarthub}">
+                        
+                        <a href="javascript:void(0);" 
+                           class="slds-th__action slds-text-link--reset">
+                            <span class="slds-assistive-text">Sort</span>
+                            <span class="slds-truncate" title="Name">Start Hub</span>  
+                            <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'startHub') }">&nbsp;  &#9660; </aura:if>  
+                            <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'startHub') }"> &nbsp;  &#9650; </aura:if> 
+                        </a> 
+                        </th>
+                        <th width="150px"
+                            class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortendhub}">
+                            
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">End Hub</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'endHub') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'endHub') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        <th width="150px"
+                            class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortdistance}">
+                            
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">Distance</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'distance') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'distance') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        
+                        
+                    </tr>
+                    
+                </thead>
+                
+            </table>
+            
+            
+            <aura:iteration 
+                            items="{!v.Booking}" 
+                            var="item">
+                
+                <c:bookdata Booking="{!item}" />
+            </aura:iteration>
+            
+            
+            
+            <div class="slds-clearfix">
+                <div class="slds-page-header" role="banner">
+                    <div class="slds-float_right">            
+                        <lightning:button disabled="{!v.PageNumber == 1}" variant="brand" aura:id="prevPage" label="Prev" onclick="{!c.handlePrev}" />            
+                        <lightning:button disabled="{!v.PageNumber == v.TotalPages}" aura:id="nextPage" variant="brand" label="Next" onclick="{!c.handleNext}"/>
+                    </div>
+                    <p class="slds-page-header__title">{!v.RecordStart}-{!v.RecordEnd} of {!v.TotalRecords} | Page {!v.PageNumber} of {!v.TotalPages}</p>
+                </div>
+            </div>       
+            
+        </lightning:tab>
+        
+        <lightning:tab label="Bikes" id="bike">
+            <div class="slds-form-element slds-lookup" 
+                 data-select="single">
+                
+                <div class="slds-form-element__control">
+                    <div class="slds-input-has-icon slds-input-has-icon--right">
+                        <lightning:buttonIcon 
+                                              iconName="utility:search" 
+                                              variant="bare" 
+                                              onclick="{!c.doActionForBike }" 
+                                              alternativeText="Search" 
+                                              class="slds-input__icon" />
+                        
+                        <ui:inputText aura:id="inputbike" 
+                                      value="{!v.searchBike}" 
+                                      class="slds-lookup__search-input slds-input" 
+                                      required="true" 
+                                      placeholder="Search" />
+                    </div>
+                </div>
+            </div>
+            <br/>
+            <br/>
+            <br/>
+            
+            
+            <table style="width:100%" class="slds-table slds-table--bordered slds-table--cell-buffer">
+                <thead>
+                    <tr class="slds-text-title--caps" width="300px">
+                        
+                        <th class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortBikeNumber}"
+                            width="150px">
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">Bike Number</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoftbike == 'bikenumber') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoftbike == 'bikenumber') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        
+                        <th class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortKMCovered}"
+                            width="150px">
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">KM Covered</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoftbike == 'kmcovered') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoftbike == 'kmcovered') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        
+                        
+                        <th scope="col" width="150px">
+                            <div class="slds-truncate" title="active">Active</div>
+                        </th>
+                        <th scope="col" width="150px">
+                            <div class="slds-truncate" title="duetoservice">Due to service</div>
+                        </th>
+                        <th scope="col" width="150px">
+                            <div class="slds-truncate" title="booked">Booked</div>
+                        </th>
+                        
+                    </tr>
+                </thead>
+            </table>
+            
+            
+            
+            
+            <aura:iteration 
+                            items="{!v.Bike}" 
+                            var="item">
+                
+                <c:bikedata Bikee="{!item}" />
+                
+            </aura:iteration>
+            
+        </lightning:tab>
+        
+    </lightning:tabset>
+</aura:component>
+
+
+
+
+Child Component for Booking
+------------------------------------------------------------------------------------------------------------------------------------------
+<aura:component controller="fetchbookingdata" 
+                implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" 
+                access="global" >
+    
+		 <aura:attribute name="Booking" type="Booking__c" />
+         <table style="width:100%" class="slds-table slds-table--bordered slds-table--cell-buffer">
+                <tr class="slds-text-title--caps" width="300px" >
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Booking.Name}">{!v.Booking.Name}</div>
+      			</th>	
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Booking.Customer__r.Name}">{!v.Booking.Customer__r.Name}</div>
+      			</th>
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Booking.Bike__r.Name}">{!v.Booking.Bike__r.Name}</div>
+      			</th>
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Booking.StartHub__r.Name}">{!v.Booking.StartHub__r.Name}</div>
+      			</th>  
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Booking.EndHub__r.Name}">{!v.Booking.EndHub__r.Name}</div>
+      			</th>     
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Booking.DistanceKMs__c}">{!v.Booking.DistanceKMs__c}</div>
+      			</th>     
+                </tr>
+        </table>
+               
+</aura:component>
+
+Child Component for Bike
+------------------------------------------------------------------------------------------------------------------------------------------
+<aura:component controller="fetchbookingdata" 
+                implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" 
+                access="global" >
+    
+		 <aura:attribute name="Bikee" type="Bike__c" />
+         <table style="width:100%" class="slds-table slds-table--bordered slds-table--cell-buffer">
+                <tr class="slds-text-title--caps" width="300px" >
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Bikee.VehicleNo__c}">{!v.Bikee.VehicleNo__c}</div>
+      			</th>
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Bikee.KMCovered__c}">{!v.Bikee.KMCovered__c}</div>
+      			</th>
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Bikee.Active__c}"></div>
+                <ui:outputCheckbox  aura:id="output" value="{!v.Bikee.Active__c}"/>
+      			</th>
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Bikee.DueToService__c}"></div>
+                <ui:outputCheckbox aura:id="output" value="{!v.Bikee.DueToService__c}"/>
+      			</th>  
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Bikee.IsBooked__c}"></div>
+                <ui:outputCheckbox aura:id="output" value="{!v.Bikee.IsBooked__c}"/>
+      			</th>     
+                </tr>
+        </table>
+               
+</aura:component>
+
+
+Parent Controller
+------------------------------------------------------------------------------------------------------------------------------------------
+
+
+({  
+    
+    
+    doInit : function(component, event, helper)
+    {
+       var pageNumber = component.get("v.PageNumber");  
+       var pageSize = 10.00;
+       helper.getbookingpagelist(component, pageNumber, pageSize);
+    },
+    
+     onSelectChange : function(component, event, helper) {
+        
+       var pageNumber = component.get("v.PageNumber");  
+       var pageSize = 10.00;
+       helper.getbookingpagelist(component, pageNumber, pageSize);
+        if(component.find("pageSize")!= undefined && component.find("pageSize") != null){
+           var pageSize   = component.find("pageSize").get("v.value"); 
+            helper.getbookingpagelist(component, pageNumber, pageSize);
+      }
+    },
+    
+    
+    handleChange : function(component, event, helper) {
+        
+        var test = component.get("v.Booking");
+        console.log(test.length);
+        
+        var myoption = component.get("v.values");
+        var bool =[];
+        
+        console.log(myoption.length);
+        for(let i = 0; i < myoption.length; i++){
+            if(myoption[i] != undefined)
+                bool.push(true);    
+        }
+        var dist = 3- myoption.length;
+        while(dist> 0){
+            bool.push(false);
+            dist--;
+        }
+        
+        var books = [];
+        var badbooks = [];
+        console.log('boolean is : '+bool[0] +' '+bool[1] +bool[2]   );
+        
+        
+        for(let i=0; i < test.length; i++){
+            
+            console.log('data is : '+test[i].Bike__r.Active__c+' '+test[i].Bike__r.IsBooked__c+' '+test[i].Bike__r.DueToService__c);
+            if(test[i].Bike__r.Active__c== bool[0] && test[i].Bike__r.IsBooked__c==bool[1] && test[i].Bike__r.DueToService__c==bool[2]){                    
+                
+                books.push(test[i]);
+            }
+            
+        }
+        component.set("v.Booking",books);
+        
+        var myoption = component.get("v.values");
+        console.log(myoption.length);
+        if(myoption.length ==0){
+
+            var old = component.get("v.realbooking");
+            component.set("v.Booking",old);
+        }
+        console.log(books.length);
+        
+    },
+    
+    doActionForBook : function(component, event) {
+        
+        var inputCmp = component.find("inputCmp");
+        var value = inputCmp.get("v.value");
+        var searchText = component.get('v.searchText');
+        var books = [];
+        var test = component.get("v.realbooking");
+        
+        
+        var badbooks=[];
+        for(let i=0; i<test.length;i++){
+            var datatext = test[i].Customer__r.Name;
+            datatext= datatext.toUpperCase();
+            
+            var text = searchText.toUpperCase();
+            console.log(datatext+' '+text);
+            if(datatext.includes(text)){
+                console.log('hii');
+                books.push(test[i]);	
+            }
+            else{
+            var old = component.get("v.realbooking");
+            component.set("v.Booking",old);
+        }
+        inputCmp.set("v.value",'');
+        component.set("v.Booking",books); 
+        }
+
+    },
+    doActionForBike : function(component, event) {
+        
+        
+        var inputCmp = component.find("inputbike");
+        var value = inputCmp.get("v.value");
+        var searchText = component.get('v.searchBike');
+        
+        var action = component.get("c.searchForBike");
+        action.setParams({searchText: searchText});
+        var inputCmp = component.find("inputbike");
+        
+        action.setCallback(this, function(data){
+            var state = data.getState();
+            
+            if (data.getReturnValue()!= null ) {
+                console.log("Success to find");
+                component.set("v.Bike",data.getReturnValue());                  
+                console.log(data.getReturnValue());
+                
+            }
+            else{
+                console.log("search Failed");
+                inputCmp.set("v.errors", [{message:"Person not found " +searchText}]);
+                
+            }
+        });    
+        
+        
+        $A.enqueueAction(action);
+    },
+    sortBookingNumber: function(component, event, helper) {
+        component.set("v.selectedTabsoft", 'firstName');
+        helper.sortHelper(component, event, 'Name');
+    },
+    
+    sortCustomer: function(component, event, helper) {
+        component.set("v.selectedTabsoft", 'custName');
+        helper.sortHelper(component, event, 'Customer__r.Name');
+    },  
+    sortBikeName: function(component, event, helper) {
+        component.set("v.selectedTabsoft", 'bikeName');
+        helper.sortHelper(component, event, 'Bike__r.Name');
+    }, 
+    sortstarthub: function(component, event, helper) {
+        component.set("v.selectedTabsoft", 'startHub');
+        helper.sortHelper(component, event, 'StartHub__r.Name');
+    }, 
+    sortendhub: function(component, event, helper) {
+        component.set("v.selectedTabsoft", 'endHub');
+        helper.sortHelper(component, event, 'EndHub__r.Name');
+    }, 
+    sortdistance: function(component, event, helper) {
+        component.set("v.selectedTabsoft", 'distance');
+        helper.sortHelper(component, event, 'DistanceKMs__c');
+    },
+    loadbookinglist: function(component, event, helper) {
+        
+        helper.onLoad(component, event, 'Name');
+    },
+    
+    sortBikeNumber: function(component, event, helper) {
+        component.set("v.selectedTabsoftbike", 'bikenumber');
+        helper.sortHelper(component, event, 'VehicleNo__c');
+    },
+    
+    sortKMCovered: function(component, event, helper) {
+        component.set("v.selectedTabsoftbike", 'kmcovered');
+        helper.sortHelper(component, event, 'KMCovered__c');
+    },  
+    
+    loadbookinglist: function(component, event, helper) {
+        
+        helper.onLoad(component, event, 'Name');
+        helper.onLoad(component, event, 'VehicleNo__c');
+        
+    },
+    
+    handleNext: function(component, event, helper) {
+        var pageNumber = component.get("v.PageNumber");  
+        var pageSize = component.find("pageSize").get("v.value");
+        pageNumber++;
+        helper.getbookingpagelist(component, pageNumber, pageSize);
+    },
+    
+    handlePrev: function(component, event, helper) {
+        var pageNumber = component.get("v.PageNumber");  
+        var pageSize = component.find("pageSize").get("v.value");
+        pageNumber--;
+        helper.getbookingpagelist(component, pageNumber, pageSize);
+    },
+    
+    onSelectChange: function(component, event, helper) {
+        var page = 1
+        var pageSize = component.find("pageSize").get("v.value");
+        helper.getbookingpagelist(component, page, pageSize);
+    },
+    
+    
+});
+
+
+Parent Helper for TabView
+------------------------------------------------------------------------------------------------------------------------------------------
+
+
+({
+    sortHelper: function(component, event, sortFieldName) {
+        var currentDir = component.get("v.arrowDirection");
+        
+        if (currentDir == 'arrowdown') {
+            component.set("v.arrowDirection", 'arrowup');
+            component.set("v.isAsc", true);
+        } else {
+            component.set("v.arrowDirection", 'arrowdown');
+            component.set("v.isAsc", false);
+        }
+        this.onLoad(component, event, sortFieldName);
+    },
+    onLoad: function(component, event, sortField) {
+      //call apex class method
+      var action = component.get('c.getbooks');
+ 
+      // pass the apex method parameters to action 
+      action.setParams({
+         'sortField': sortField,
+         'isAsc': component.get("v.isAsc")
+      });
+      action.setCallback(this, function(response) {
+         //store state of response
+         var state = response.getState();
+         if (state === "SUCCESS") {
+             
+            //set response value in ListOfContact attribute on component.
+            component.set('v.realbooking', response.getReturnValue());
+            component.set('v.Booking', response.getReturnValue()); 
+         }
+      });
+      $A.enqueueAction(action);
+        
+      var action = component.get('c.getmybike');
+ 
+      // pass the apex method parameters to action 
+      action.setParams({
+         'sortField': sortField,
+         'isAsc': component.get("v.isAsc")
+      });
+      action.setCallback(this, function(response) {
+         //store state of response
+         var state = response.getState();
+         if (state === "SUCCESS") {
+             
+            //set response value in ListOfContact attribute on component.
+            component.set('v.Bike', response.getReturnValue());
+         }
+      });
+      $A.enqueueAction(action);
+        
+          
+   },
+    getbookingpagelist: function(component, pageNumber, pageSize) {
+     var action = component.get("c.getbookdata");
+        action.setParams({
+            "pageNumber": pageNumber,
+            "pageSize": pageSize
+        });
+        action.setCallback(this, function(result) {
+            var state = result.getState();
+            if (component.isValid() && state === "SUCCESS"){
+                var resultData = result.getReturnValue();
+                component.set("v.Booking", resultData.booklist);
+                component.set("v.PageNumber", resultData.pageNumber);
+                component.set("v.TotalRecords", resultData.totalRecords);
+                component.set("v.RecordStart", resultData.recordStart);
+                component.set("v.RecordEnd", resultData.recordEnd);
+                component.set("v.TotalPages", Math.ceil(resultData.totalRecords / pageSize));
+            }
+        });
+        $A.enqueueAction(action);
+    }
+    
+})
+
+
+Apex Code
+------------------------------------------------------------------------------------------------------------------------------------------
+public class fetchbookingdata {
+    @AuraEnabled
+    public static List<Booking__c> searchbooks() {
+        return 
+            [Select Name, Customer__r.Name, Bike__r.Name, StartHub__r.Name, EndHub__r.Name, DistanceKMs__c FROM BOOKING__C  ];
+    }
+    
+    @AuraEnabled
+    public static List<Bike__c> searchbike() {
+        List<Bike__c> mybike=    [Select VehicleNo__c, KMCovered__c, IsBooked__c, Active__c, DueToService__c FROM Bike__c  ];
+        
+        return mybike;
+    }
+    
+    @AuraEnabled
+    public static List<Booking__c> searchForIds(String searchText) {
+        string text = '%'+searchText+'%';
+        
+        return [Select Name, Customer__r.Name, Bike__r.Name, StartHub__r.Name, EndHub__r.Name, DistanceKMs__c FROM BOOKING__C
+                WHERE Customer__r.Name Like :text];  
+    }
+    
+    @AuraEnabled
+    public static List<Bike__c> searchForBike(String searchText) {
+        string text = '%'+searchText+'%';
+        
+        return [Select VehicleNo__c, KMCovered__c, IsBooked__c, Active__c, DueToService__c FROM Bike__c 
+                WHERE VehicleNo__c Like :text];  
+        
+    }
+    
+    @AuraEnabled
+    public static List<Booking__c> getbooks(String sortField, boolean isAsc) {
+       // System.debug('hii');
+        String sSoql = 'Select Name, Customer__r.Name, RideCompleted__c, Bike__r.Name, Bike__r.Active__c, Bike__r.IsBooked__c, Bike__r.DueToService__c , StartHub__r.Name, EndHub__r.Name, DistanceKMs__c';
+        sSoql += ' From BOOKING__C ';
+        
+      //  System.debug('sortField-->' + sortField);
+        
+        if (sortField != '') {
+            sSoql += ' order by ' + sortField;}
+        
+        if (isAsc) {
+            sSoql += ' asc';
+        } else {
+            sSoql += ' desc';
+        }
+        
+        sSoql += ' LIMIT 100';
+      //  System.debug('@Developer -->sSoql:' + sSoql);  
+        
+        list <Booking__c> lstResult;
+        
+      //  system.debug('The query is' + sSoql);
+        lstResult = Database.query(sSoql);
+        
+      //  System.debug(lstResult);
+        List < Booking__c > returnConList = new List < Booking__c > ();
+        
+        for (Booking__c c: lstResult) {
+            returnConList.add(c);
+        }
+        
+        return returnConList;
+        
+        
+    }
+    
+    @AuraEnabled
+    public static List<Bike__c> getmybike(String sortField, boolean isAsc) {
+      //  System.debug('hii');
+        String sSoql = 'Select VehicleNo__c, KMCovered__c, IsBooked__c, Active__c, DueToService__c';
+        sSoql += ' From BIKE__C ';
+        
+      //  System.debug('sortField-->' + sortField);
+        
+        if (sortField != '') {
+            sSoql += ' order by ' + sortField;}
+        
+        if (isAsc) {
+            sSoql += ' asc';
+        } else {
+            sSoql += ' desc';
+        }
+        
+        sSoql += ' LIMIT 50';
+      //  System.debug('@Developer -->sSoql:' + sSoql);  
+        
+        list <Bike__c> lstResult;
+        
+      //  system.debug('The query is' + sSoql);
+        lstResult = Database.query(sSoql);
+        
+      //  System.debug(lstResult);
+        List < Bike__c > returnConList = new List < Bike__c > ();
+        
+        for (Bike__c c: lstResult) {
+            returnConList.add(c);
+        }
+        
+        return returnConList;
+        
+        
+    }
+    
+    @AuraEnabled
+    public static List<Booking__c>  getfilteredbook(List<String> mybook) {
+        
+        if(mybook.size() ==0)
+        {
+       		System.debug('null');     
+            return searchbooks();
+        }
+        else{
+        Integer check = mybook.size();
+        
+        Boolean[] test= new List<Boolean>();
+        if(check !=0 )
+        {
+            while(check >0)
+            {
+                test.add(true);
+
+                check--;
+            }
+            
+            integer val = 3- check;
+            while(val>0)
+            {
+                test.add(false);
+                val--;
+            }
+        }
+        
+        
+        
+       return [Select Name, Customer__r.Name, Bike__r.Name, StartHub__r.Name, EndHub__r.Name, DistanceKMs__c FROM BOOKING__C  
+                WHERE Bike__r.Active__c =: test[0] AND Bike__r.IsBooked__c =: test[1] AND Bike__r.DueToService__c =: test[2]  ];
+        }
+         
+    }
+    
+    @AuraEnabled
+    public static BookingDataTableWrapper getbookdata(Decimal pageNumber, Decimal pageSize) {
+        System.debug('hii');
+        
+        Integer pSize = (Integer)pageSize;
+        
+        Integer pNumber = (Integer)pageNumber;
+         
+        //Offset for SOQL
+        Integer offset = (pNumber - 1) * pSize;
+         
+        //Total Records
+        Integer totalRecords = [SELECT COUNT() FROM Booking__c];
+        Integer recordEnd = pSize * pNumber;
+ 
+        //Instance of Contact DataTable Wrapper Class
+        BookingDataTableWrapper objDT =  new BookingDataTableWrapper();  
+        objDT.pageSize = pSize;
+        objDT.pageNumber = pNumber;
+        objDT.recordStart = offset + 1;
+        objDT.recordEnd = totalRecords >= recordEnd ? recordEnd : totalRecords;
+        objDT.totalRecords = totalRecords;
+        objDT.booklist = [Select Name, Customer__r.Name, Bike__r.Name, StartHub__r.Name, EndHub__r.Name, DistanceKMs__c FROM BOOKING__C LIMIT :pSize OFFSET :offset];
+        System.debug(objDT.booklist);
+        return objDT;
+    }
+     
+    //Wrapper Class For Booking DataTable  
+    public class BookingDataTableWrapper {
+        @AuraEnabled
+        public Integer pageSize {get;set;}
+        @AuraEnabled
+        public Integer pageNumber {get;set;}
+        @AuraEnabled
+        public Integer totalRecords {get;set;}
+        @AuraEnabled
+        public Integer recordStart {get;set;}
+        @AuraEnabled
+        public Integer recordEnd {get;set;}
+        @AuraEnabled
+        public List<Booking__c> booklist {get;set;}
+    }
+    
+}
+
