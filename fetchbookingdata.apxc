@@ -1,0 +1,186 @@
+public class fetchbookingdata {
+    @AuraEnabled
+    public static List<Booking__c> searchbooks() {
+        return 
+            [Select Name, Customer__r.Name, Bike__r.Name, StartHub__r.Name, EndHub__r.Name, DistanceKMs__c FROM BOOKING__C  ];
+    }
+    
+    @AuraEnabled
+    public static List<Bike__c> searchbike() {
+        List<Bike__c> mybike=    [Select VehicleNo__c, KMCovered__c, IsBooked__c, Active__c, DueToService__c FROM Bike__c  ];
+        
+        return mybike;
+    }
+    
+    @AuraEnabled
+    public static List<Booking__c> searchForIds(String searchText) {
+        string text = '%'+searchText+'%';
+        
+        return [Select Name, Customer__r.Name, Bike__r.Name, StartHub__r.Name, EndHub__r.Name, DistanceKMs__c FROM BOOKING__C
+                WHERE Customer__r.Name Like :text];  
+    }
+    
+    @AuraEnabled
+    public static List<Bike__c> searchForBike(String searchText) {
+        string text = '%'+searchText+'%';
+        
+        return [Select VehicleNo__c, KMCovered__c, IsBooked__c, Active__c, DueToService__c FROM Bike__c 
+                WHERE VehicleNo__c Like :text];  
+        
+    }
+    
+    @AuraEnabled
+    public static List<Booking__c> getbooks(String sortField, boolean isAsc) {
+       // System.debug('hii');
+        String sSoql = 'Select Name, Customer__r.Name, RideCompleted__c, Bike__r.Name, Bike__r.Active__c, Bike__r.IsBooked__c, Bike__r.DueToService__c , StartHub__r.Name, EndHub__r.Name, DistanceKMs__c';
+        sSoql += ' From BOOKING__C ';
+        
+      //  System.debug('sortField-->' + sortField);
+        
+        if (sortField != '') {
+            sSoql += ' order by ' + sortField;}
+        
+        if (isAsc) {
+            sSoql += ' asc';
+        } else {
+            sSoql += ' desc';
+        }
+        
+        sSoql += ' LIMIT 100';
+      //  System.debug('@Developer -->sSoql:' + sSoql);  
+        
+        list <Booking__c> lstResult;
+        
+      //  system.debug('The query is' + sSoql);
+        lstResult = Database.query(sSoql);
+        
+      //  System.debug(lstResult);
+        List < Booking__c > returnConList = new List < Booking__c > ();
+        
+        for (Booking__c c: lstResult) {
+            returnConList.add(c);
+        }
+        
+        return returnConList;
+        
+        
+    }
+    
+    @AuraEnabled
+    public static List<Bike__c> getmybike(String sortField, boolean isAsc) {
+      //  System.debug('hii');
+        String sSoql = 'Select VehicleNo__c, KMCovered__c, IsBooked__c, Active__c, DueToService__c';
+        sSoql += ' From BIKE__C ';
+        
+      //  System.debug('sortField-->' + sortField);
+        
+        if (sortField != '') {
+            sSoql += ' order by ' + sortField;}
+        
+        if (isAsc) {
+            sSoql += ' asc';
+        } else {
+            sSoql += ' desc';
+        }
+        
+        sSoql += ' LIMIT 50';
+      //  System.debug('@Developer -->sSoql:' + sSoql);  
+        
+        list <Bike__c> lstResult;
+        
+      //  system.debug('The query is' + sSoql);
+        lstResult = Database.query(sSoql);
+        
+      //  System.debug(lstResult);
+        List < Bike__c > returnConList = new List < Bike__c > ();
+        
+        for (Bike__c c: lstResult) {
+            returnConList.add(c);
+        }
+        
+        return returnConList;
+        
+        
+    }
+    
+    @AuraEnabled
+    public static List<Booking__c>  getfilteredbook(List<String> mybook) {
+        
+        if(mybook.size() ==0)
+        {
+       		System.debug('null');     
+            return searchbooks();
+        }
+        else{
+        Integer check = mybook.size();
+        
+        Boolean[] test= new List<Boolean>();
+        if(check !=0 )
+        {
+            while(check >0)
+            {
+                test.add(true);
+
+                check--;
+            }
+            
+            integer val = 3- check;
+            while(val>0)
+            {
+                test.add(false);
+                val--;
+            }
+        }
+        
+        
+        
+       return [Select Name, Customer__r.Name, Bike__r.Name, StartHub__r.Name, EndHub__r.Name, DistanceKMs__c FROM BOOKING__C  
+                WHERE Bike__r.Active__c =: test[0] AND Bike__r.IsBooked__c =: test[1] AND Bike__r.DueToService__c =: test[2]  ];
+        }
+         
+    }
+    
+    @AuraEnabled
+    public static BookingDataTableWrapper getbookdata(Decimal pageNumber, Decimal pageSize) {
+        System.debug('hii');
+        
+        Integer pSize = (Integer)pageSize;
+        
+        Integer pNumber = (Integer)pageNumber;
+         
+        //Offset for SOQL
+        Integer offset = (pNumber - 1) * pSize;
+         
+        //Total Records
+        Integer totalRecords = [SELECT COUNT() FROM Booking__c];
+        Integer recordEnd = pSize * pNumber;
+ 
+        //Instance of Contact DataTable Wrapper Class
+        BookingDataTableWrapper objDT =  new BookingDataTableWrapper();  
+        objDT.pageSize = pSize;
+        objDT.pageNumber = pNumber;
+        objDT.recordStart = offset + 1;
+        objDT.recordEnd = totalRecords >= recordEnd ? recordEnd : totalRecords;
+        objDT.totalRecords = totalRecords;
+        objDT.booklist = [Select Name, Customer__r.Name, Bike__r.Name, StartHub__r.Name, EndHub__r.Name, DistanceKMs__c FROM BOOKING__C LIMIT :pSize OFFSET :offset];
+        System.debug(objDT.booklist);
+        return objDT;
+    }
+     
+    //Wrapper Class For Booking DataTable  
+    public class BookingDataTableWrapper {
+        @AuraEnabled
+        public Integer pageSize {get;set;}
+        @AuraEnabled
+        public Integer pageNumber {get;set;}
+        @AuraEnabled
+        public Integer totalRecords {get;set;}
+        @AuraEnabled
+        public Integer recordStart {get;set;}
+        @AuraEnabled
+        public Integer recordEnd {get;set;}
+        @AuraEnabled
+        public List<Booking__c> booklist {get;set;}
+    }
+    
+}
