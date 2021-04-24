@@ -1,0 +1,30 @@
+
+<aura:component controller="fetchbookingdata" 
+                implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" 
+                access="global" >
+    
+		 <aura:attribute name="Bikee" type="Bike__c" />
+         <table style="width:100%" class="slds-table slds-table--bordered slds-table--cell-buffer">
+                <tr class="slds-text-title--caps" width="300px" >
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Bikee.VehicleNo__c}">{!v.Bikee.VehicleNo__c}</div>
+      			</th>
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Bikee.KMCovered__c}">{!v.Bikee.KMCovered__c}</div>
+      			</th>
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Bikee.Active__c}"></div>
+                <ui:outputCheckbox  aura:id="output" value="{!v.Bikee.Active__c}"/>
+      			</th>
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Bikee.DueToService__c}"></div>
+                <ui:outputCheckbox aura:id="output" value="{!v.Bikee.DueToService__c}"/>
+      			</th>  
+                <th scope="row" width="150px">
+        		<div class="slds-truncate" title="{!v.Bikee.IsBooked__c}"></div>
+                <ui:outputCheckbox aura:id="output" value="{!v.Bikee.IsBooked__c}"/>
+      			</th>     
+                </tr>
+        </table>
+               
+</aura:component>
