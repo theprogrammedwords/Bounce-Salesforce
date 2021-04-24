@@ -1,0 +1,326 @@
+
+<aura:component implements="forceCommunity:searchInterface,force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction"
+                controller="fetchbookingdata"
+                access="global">
+    
+    <aura:attribute 
+                    name="Booking" 
+                    type="Booking__c[]" />
+    <aura:attribute 
+                    name="realbooking" 
+                    type="Booking__c[]" />
+    
+    <aura:attribute 
+                    name="searchText" 
+                    type="String" 
+                    default=""/>
+    
+    <aura:attribute name="options" type="List" 
+                    default="[
+                             {'label': 'isActive', 'value': 'option1'},
+                             {'label': 'isBooked', 'value': 'option2'},
+                             {'label': 'Due to service', 'value': 'option3'}
+                             ]"/>
+    
+    <aura:attribute 
+                    name="Bike" 
+                    type="Bike__c[]" />
+    
+    <aura:attribute 
+                    name="searchBike" 
+                    type="String" 
+                    default=""/>
+    <aura:handler name="init" value="{!this}" action="{!c.loadbookinglist}"/>
+    
+    <aura:attribute name="PageNumber" type="integer" default="1"/>
+    <aura:attribute name="TotalPages" type="integer" default="0"/>
+    <aura:attribute name="TotalRecords" type="integer" default="0"/>
+    <aura:attribute name="RecordStart" type="integer" default="0"/>
+    <aura:attribute name="RecordEnd" type="integer" default="0"/>
+    
+    
+    <aura:attribute name="values" type="List" default="['','','']"/>
+    
+    
+    <aura:attribute 
+                    name="arrowDirection" 
+                    type="string" 
+                    default="arrowup" 
+                    />
+    
+    <aura:attribute 
+                    name="isAsc" 
+                    type="boolean" 
+                    default="true" 
+                    /> 
+    
+    <aura:attribute name="selectedTabsoft" 
+                    type="string" 
+                    default="firstName" 
+                    />
+    
+    <aura:attribute name="selectedTabsoftbike" 
+                    type="string" 
+                    default="bikenumber" 
+                    />
+    
+    
+    <aura:handler 
+                  name="init" 
+                  value="{!this}" 
+                  action="{!c.doInit}" />
+    
+    
+    
+    <lightning:tabset variant="vertical" selectedTabId="booking">
+        
+        
+        <lightning:tab label="Booking" id="booking">
+            <div class="slds-m-around_xx-large">
+                <h1 class="slds-text-heading--medium">Booking</h1>
+                <br/>
+                <div class="slds-float_right">
+                    <ui:inputSelect aura:id="pageSize" label="Display Records Per Page: " change="{!c.onSelectChange}">
+                        <ui:inputSelectOption text="10" label="10" value="true"/>
+                        <ui:inputSelectOption text="15" label="15"/>
+                        <ui:inputSelectOption text="20" label="20"/>
+                    </ui:inputSelect>
+                    <br/>
+                </div>
+                
+            </div>
+            
+            <div class="slds-form-element slds-lookup" 
+                 data-select="single">
+                
+                <div class="slds-form-element__control">
+                    <div class="slds-input-has-icon slds-input-has-icon--right">
+                        <lightning:buttonIcon 
+                                              iconName="utility:search" 
+                                              variant="bare" 
+                                              onclick="{!c.doActionForBook }" 
+                                              alternativeText="Search" 
+                                              class="slds-input__icon" />
+                        
+                        <ui:inputText aura:id="inputCmp" 
+                                      value="{!v.searchText}" 
+                                      class="slds-lookup__search-input slds-input" 
+                                      required="true" 
+                                      placeholder="Search" />
+                    </div>
+                </div>
+            </div>
+            <br/>
+            <br/>
+            <br/>
+            
+            
+            <lightning:checkboxGroup name="checkboxgroup"
+                                     label="Filters"
+                                     options="{! v.options }"
+                                     value="{! v.values }"
+                                     onchange="{! c.handleChange }"/>
+            
+            
+            <br/>
+            <br/>
+            
+            <table style="width:100%" class="slds-table slds-table--bordered slds-table--cell-buffer">
+                <thead>
+                    <tr class="slds-text-title--caps" width="300px">
+                        
+                        <th class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortBookingNumber}"
+                            width="150px">
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">Booking Name</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'firstName') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'firstName') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        
+                        <th width="150px"
+                            class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortCustomer}">
+                            
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">Customer Name</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'custName') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'custName') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        
+                        <th width="150px"
+                            class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortBikeName}">
+                            
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">Bike Name</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'bikeName') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'bikeName') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th><th width="150px"
+                                 class="slds-is-sortable slds-text-title--caps" 
+                                 scope="col" 
+                                 onclick="{!c.sortstarthub}">
+                        
+                        <a href="javascript:void(0);" 
+                           class="slds-th__action slds-text-link--reset">
+                            <span class="slds-assistive-text">Sort</span>
+                            <span class="slds-truncate" title="Name">Start Hub</span>  
+                            <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'startHub') }">&nbsp;  &#9660; </aura:if>  
+                            <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'startHub') }"> &nbsp;  &#9650; </aura:if> 
+                        </a> 
+                        </th>
+                        <th width="150px"
+                            class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortendhub}">
+                            
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">End Hub</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'endHub') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'endHub') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        <th width="150px"
+                            class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortdistance}">
+                            
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">Distance</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoft == 'distance') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoft == 'distance') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        
+                        
+                    </tr>
+                    
+                </thead>
+                
+            </table>
+            
+            
+            <aura:iteration 
+                            items="{!v.Booking}" 
+                            var="item">
+                
+                <c:bookdata Booking="{!item}" />
+            </aura:iteration>
+            
+            
+            
+            <div class="slds-clearfix">
+                <div class="slds-page-header" role="banner">
+                    <div class="slds-float_right">            
+                        <lightning:button disabled="{!v.PageNumber == 1}" variant="brand" aura:id="prevPage" label="Prev" onclick="{!c.handlePrev}" />            
+                        <lightning:button disabled="{!v.PageNumber == v.TotalPages}" aura:id="nextPage" variant="brand" label="Next" onclick="{!c.handleNext}"/>
+                    </div>
+                    <p class="slds-page-header__title">{!v.RecordStart}-{!v.RecordEnd} of {!v.TotalRecords} | Page {!v.PageNumber} of {!v.TotalPages}</p>
+                </div>
+            </div>       
+            
+        </lightning:tab>
+        
+        <lightning:tab label="Bikes" id="bike">
+            <div class="slds-form-element slds-lookup" 
+                 data-select="single">
+                
+                <div class="slds-form-element__control">
+                    <div class="slds-input-has-icon slds-input-has-icon--right">
+                        <lightning:buttonIcon 
+                                              iconName="utility:search" 
+                                              variant="bare" 
+                                              onclick="{!c.doActionForBike }" 
+                                              alternativeText="Search" 
+                                              class="slds-input__icon" />
+                        
+                        <ui:inputText aura:id="inputbike" 
+                                      value="{!v.searchBike}" 
+                                      class="slds-lookup__search-input slds-input" 
+                                      required="true" 
+                                      placeholder="Search" />
+                    </div>
+                </div>
+            </div>
+            <br/>
+            <br/>
+            <br/>
+            
+            
+            <table style="width:100%" class="slds-table slds-table--bordered slds-table--cell-buffer">
+                <thead>
+                    <tr class="slds-text-title--caps" width="300px">
+                        
+                        <th class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortBikeNumber}"
+                            width="150px">
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">Bike Number</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoftbike == 'bikenumber') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoftbike == 'bikenumber') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        
+                        <th class="slds-is-sortable slds-text-title--caps" 
+                            scope="col" 
+                            onclick="{!c.sortKMCovered}"
+                            width="150px">
+                            <a href="javascript:void(0);" 
+                               class="slds-th__action slds-text-link--reset">
+                                <span class="slds-assistive-text">Sort</span>
+                                <span class="slds-truncate" title="Name">KM Covered</span>  
+                                <aura:if isTrue="{! and(v.arrowDirection == 'arrowdown', v.selectedTabsoftbike == 'kmcovered') }">&nbsp;  &#9660; </aura:if>  
+                                <aura:if isTrue="{! and(v.arrowDirection != 'arrowdown', v.selectedTabsoftbike == 'kmcovered') }"> &nbsp;  &#9650; </aura:if> 
+                            </a> 
+                        </th>
+                        
+                        
+                        <th scope="col" width="150px">
+                            <div class="slds-truncate" title="active">Active</div>
+                        </th>
+                        <th scope="col" width="150px">
+                            <div class="slds-truncate" title="duetoservice">Due to service</div>
+                        </th>
+                        <th scope="col" width="150px">
+                            <div class="slds-truncate" title="booked">Booked</div>
+                        </th>
+                        
+                    </tr>
+                </thead>
+            </table>
+            
+            
+            
+            
+            <aura:iteration 
+                            items="{!v.Bike}" 
+                            var="item">
+                
+                <c:bikedata Bikee="{!item}" />
+                
+            </aura:iteration>
+            
+        </lightning:tab>
+        
+    </lightning:tabset>
+</aura:component>
+
